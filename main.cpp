@@ -12,12 +12,9 @@ using namespace std;
 
 int main(){
     Ecryp obj("test.txt","test.out","123456");
-    obj.Print_data();
-    obj.Exor();
-    obj.Print_data();
-    obj.Exor();
-    obj.Print_data();
-
+    obj.Extractsbox("S-box","Inverse S-box");
+    obj.SubBytes();
+    obj.Print_sbox();
 
     return 0;
 }
