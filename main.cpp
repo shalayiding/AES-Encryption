@@ -15,6 +15,7 @@ int main(){
     obj.Extractsbox("S-box","Inverse S-box");
     obj.SubBytes();
     obj.Print_sbox();
-
+    obj.ShiftRow();
+    obj.Print_sbox();
     return 0;
 }
