@@ -17,5 +17,9 @@ int main(){
     obj.Print_sbox();
     obj.ShiftRow();
     obj.Print_sbox();
+    cout<<"testing "<<endl;
+    obj.Print_sbox();
+    obj.MixColumns();
+    obj.Print_sbox();
     return 0;
 }

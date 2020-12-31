@@ -61,29 +61,58 @@ void Ecryp::ShiftRow(){ //shifting the the row of the input matrix 0, 1 , 2 , 3
     ShiftRowCircle(3,3);
 }
 
-void Ecryp::MixColumns(){ //four bytes of each column is combined with given invertible linear transformation matrix
-    vector<vector<int>> trans_matrix = {
-        {2,3,1,1},
-        {1,2,3,1},
-        {1,1,2,3},
-        {3,1,1,2}
-    };
-    vector<int> tmp;
-    for(int i=0;i<16;i++){
-        tmp.push_back(Matrix[i].to_ulong());
+void Ecryp::gmix_column(unsigned char *r){  //mix single column 
+    
+    ///link : https://en.wikipedia.org/wiki/Rijndael_MixColumns#Implementation_example
+    
+    //============================basic test sets ====================================
+    //===Befor=========After===========Before==================After==================
+    // db 13 53 45	8e 4d a1 bc	    219 19 83 69	    142 77 161 188
+    // f2 0a 22 5c	9f dc 58 9d	    242 10 34 92	    159 220 88 157
+    // 01 01 01 01	01 01 01 01	    1   1  1  1	        1    1   1   1
+    // c6 c6 c6 c6	c6 c6 c6 c6	    198 198 198 198	    198 198 198 198
+    // d4 d4 d4 d5	d5 d5 d7 d6	    212 212 212 213	    213 213 215 214
+    // 2d 26 31 4c	4d 7e bd f8	    45 38 49 76	        77 126 189 248
+    //=================================================================================
+
+    unsigned char a[4];
+    unsigned char b[4];
+    unsigned char h;
+    unsigned char c;
+    for(c =0;c <4;c ++){
+        
+        a[c]=r[c];
+        
+        h = (unsigned char)((signed char)r[c] >> 7);
+        b[c]=r[c]<<1;
+        b[c]^=0x1B&h;
+
     }
+    
+    r[0] = b[0] ^ a[3] ^ a[2] ^ b[1] ^ a[1]; /* 2 * a0 + a3 + a2 + 3 * a1 */
+    r[1] = b[1] ^ a[0] ^ a[3] ^ b[2] ^ a[2]; /* 2 * a1 + a0 + a3 + 3 * a2 */
+    r[2] = b[2] ^ a[1] ^ a[0] ^ b[3] ^ a[3]; /* 2 * a2 + a1 + a0 + 3 * a3 */
+    r[3] = b[3] ^ a[2] ^ a[1] ^ b[0] ^ a[0]; /* 2 * a3 + a2 + a1 + 3 * a0 */
 
-    // for(int i=0;i<4;i++){
-    //     Matrix[i]
+}
 
-    //     Matrix[i+4]
-    //     Matrix[i+8]
-    //     Matrix[i+12]
-
-    // }
+void Ecryp::MixColumns(){ //four bytes of each column is combined with given invertible linear transformation matrix
+    
 
 
-
+    for(int c=0;c<4;c++){
+        unsigned char r[4];
+        bitset<8>tmp[4] = {Matrix[c],Matrix[c+4],Matrix[c+8],Matrix[c+12]};
+        for(int i=0;i<4;i++){
+            r[i]= static_cast<char> (tmp[i].to_ulong());
+        }
+        gmix_column(r);
+        Matrix[c]=(bitset<8>)r[0];
+        Matrix[c+4]=(bitset<8>)r[1];
+        Matrix[c+8]=(bitset<8>)r[2];
+        Matrix[c+12]=(bitset<8>)r[3];
+    }
+    
 }
 
 

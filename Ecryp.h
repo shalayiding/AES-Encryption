@@ -22,6 +22,7 @@ private:
 
     void ErrorMessage(int Error_code);
     void ShiftRowCircle(int row_num, int step);
+    void gmix_column(unsigned char *r);
 
 public:
     Ecryp(string argv1, string argv2, string argv3);
@@ -32,5 +33,8 @@ public:
     void SubBytes();
     void ShiftRow();
     void MixColumns();
+    
+
+
 
 };
