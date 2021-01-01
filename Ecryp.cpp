@@ -27,20 +27,19 @@ void Ecryp::Extractsbox(string sbox_file_name, string invsbox_file_name)
     }
 }
 
-
 void Ecryp::SubBytes()   //find the bytes value from the table (s-box)
 {
     for (int ele = 0; ele < 4 * 4; ele++)
     {
-        int r = Matrix[ele][7] * 8 + Matrix[ele][6] * 4 + Matrix[ele][5] * 2 + Matrix[ele][4];
-        int c = Matrix[ele][3] * 8 + Matrix[ele][2] * 4 + Matrix[ele][1] * 2 + Matrix[ele][0];
+        int r = Matrix[ele]/16;
+        int c = Matrix[ele]%16;
         Matrix[ele]=S_box[r][c];
         
     }
 }
 
 void Ecryp::ShiftRowCircle(int row_num , int step){ //shifting the row by moving int step
-    bitset<8> tmp[4];
+    unsigned char tmp[4];
     row_num *=4;
     int final_position = 0;
     for(int i=0;i<4;i++){
@@ -65,7 +64,7 @@ void Ecryp::gmix_column(unsigned char *r){  //mix single column
     
     ///link : https://en.wikipedia.org/wiki/Rijndael_MixColumns#Implementation_example
     
-    //============================basic test sets ====================================
+    //============================basic r sets ====================================
     //===Befor=========After===========Before==================After==================
     // db 13 53 45	8e 4d a1 bc	    219 19 83 69	    142 77 161 188
     // f2 0a 22 5c	9f dc 58 9d	    242 10 34 92	    159 220 88 157
@@ -101,23 +100,94 @@ void Ecryp::MixColumns(){ //four bytes of each column is combined with given inv
 
 
     for(int c=0;c<4;c++){
-        unsigned char r[4];
-        bitset<8>tmp[4] = {Matrix[c],Matrix[c+4],Matrix[c+8],Matrix[c+12]};
-        for(int i=0;i<4;i++){
-            r[i]= static_cast<char> (tmp[i].to_ulong());
-        }
+        unsigned char r[4]= {Matrix[c],Matrix[c+4],Matrix[c+8],Matrix[c+12]};
         gmix_column(r);
-        Matrix[c]=(bitset<8>)r[0];
-        Matrix[c+4]=(bitset<8>)r[1];
-        Matrix[c+8]=(bitset<8>)r[2];
-        Matrix[c+12]=(bitset<8>)r[3];
+        Matrix[c]=r[0];
+        Matrix[c+4]=r[1];
+        Matrix[c+8]=r[2];
+        Matrix[c+12]=r[3];
     }
     
 }
 
 
+void Ecryp::Roundc(unsigned char *r,int size){   //The round constant rconi for round i of the key expansion is the 32-bit word:
+    //link:https://en.wikipedia.org/wiki/AES_key_schedule
+    unsigned char  c(1);
+    r[1]=r[2]=r[3]=0;
+    for(int i=0;i<size-1;i++){
+        c=(c << 1) ^ (((c >> 7) & 0x01) * 0x1b);
+
+    }
+    r[0]=c;
+
+}
+
+void Ecryp::RotWord(unsigned char *r){ //move to 1step front 
+    unsigned char tmp = r[0];
+    r[0]=r[1];
+    r[1]=r[2];
+    r[2]=r[3];
+    r[3]=tmp;
+
+}
+
+void Ecryp::SubWord(unsigned char *r){  //look up the value from s-box
+    
+
+}
 
 
+void Ecryp::AddRoundKey(){ //add round key to the matrix 
+
+
+}
+
+
+
+
+//-----------------------------AES Decryption core --------------------------------------------------------------------------
+unsigned char Ecryp::Multi_byte(unsigned char a, unsigned char b){  //multiply numbers in Rijndael's finite field
+    //link : https://en.wikipedia.org/wiki/Finite_field_arithmetic
+    unsigned char result = 0;
+    unsigned char highbit = 0;
+
+
+    for (int i = 0; i < 8; i++) {
+      if (b & 1)
+        result ^= a;
+
+      highbit = a & 0x80;
+      a <<= 1;
+      if (highbit)
+        a ^= 0x1B;
+      b >>= 1;
+    }
+
+    return result;
+
+
+
+}
+
+void Ecryp::Inv_MixColumns(){  //reverse of the mixcolumns using Finite field arithmetic
+    
+    for(int c=0;c<4;c++){
+        unsigned char r[4]= {Matrix[c],Matrix[c+4],Matrix[c+8],Matrix[c+12]};
+        unsigned char result[4];
+        result[0]=  Multi_byte(0x0e, r[0]) ^ Multi_byte(0x0b, r[1]) ^ Multi_byte(0x0d, r[2]) ^ Multi_byte(0x09, r[3]);
+        result[1] = Multi_byte(0x09, r[0]) ^ Multi_byte(0x0e, r[1]) ^ Multi_byte(0x0b, r[2]) ^ Multi_byte(0x0d, r[3]);
+        result[2] = Multi_byte(0x0d, r[0]) ^ Multi_byte(0x09, r[1]) ^ Multi_byte(0x0e, r[2]) ^ Multi_byte(0x0b, r[3]);
+        result[3] = Multi_byte(0x0b, r[0]) ^ Multi_byte(0x0d, r[1]) ^ Multi_byte(0x09, r[2]) ^ Multi_byte(0x0e, r[3]);
+        Matrix[c]=result[0];
+        Matrix[c+4]=result[1];
+        Matrix[c+8]=result[2];
+        Matrix[c+12]=result[3];
+
+    }
+    
+
+}
 
 void Ecryp::Print_sbox(){ //print sbox
 
@@ -145,7 +215,7 @@ void Ecryp::Print_sbox(){ //print sbox
         if(i%4==0)
             cout<<endl;
         
-        cout << Matrix[i].to_ulong()<< ",";
+        cout << (int)Matrix[i]<< ",";
     }
     cout<<endl;
 
